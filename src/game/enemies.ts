@@ -190,7 +190,7 @@ function queenIntent(enemy: EnemyState, units: readonly UnitState[]): Intent {
   const phase2 = enemy.hp <= enemy.maxHp / 2;
   const attackRange = phase2 ? 6 : 4;
 
-  if (phase2 || enemy.turnsSinceSpawn >= 1) {
+  if (phase2 || enemy.turnsSinceSpawn >= 2) {
     actions.push({ type: 'spawn' });
   }
 

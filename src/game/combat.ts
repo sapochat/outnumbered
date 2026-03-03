@@ -155,7 +155,7 @@ export function resolveEnemyIntents(
 
   if (shouldBuff) {
     return {
-      enemies: newEnemies.map(e =>
+      enemies: [...newEnemies, ...newSpawns].map(e =>
         e.enemyType === EnemyType.GRUNT ? { ...e, buffed: true } : e,
       ),
       units: newUnits,
