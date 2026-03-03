@@ -15,14 +15,14 @@ describe('Floor Generation', () => {
     expect(floor8.length).toBeGreaterThan(floor1.length);
   });
 
-  it('floor 5 includes a boss', () => {
+  it('floor 5 includes a warlord', () => {
     const enemies = generateFloorEnemies(5);
-    expect(enemies.some(e => e.enemyType === EnemyType.BOSS)).toBe(true);
+    expect(enemies.some(e => e.enemyType === EnemyType.WARLORD)).toBe(true);
   });
 
-  it('floor 10 includes a boss', () => {
+  it('floor 10 includes a queen', () => {
     const enemies = generateFloorEnemies(10);
-    expect(enemies.some(e => e.enemyType === EnemyType.BOSS)).toBe(true);
+    expect(enemies.some(e => e.enemyType === EnemyType.QUEEN)).toBe(true);
   });
 
   it('enemies are placed in the right half of the grid (cols 5-8)', () => {

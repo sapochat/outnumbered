@@ -38,7 +38,10 @@ export enum EnemyType {
   GRUNT = 'grunt',
   ARCHER = 'archer',
   SPAWNER = 'spawner',
-  BOSS = 'boss',
+  CHARGER = 'charger',
+  SHIELD = 'shield',
+  WARLORD = 'warlord',
+  QUEEN = 'queen',
 }
 
 export enum AbilitySlot {
@@ -55,7 +58,7 @@ export interface Ability {
   readonly damage: number;
   readonly description: string;
   readonly aoe: 'single' | 'line' | 'none'; // 'none' for utility abilities
-  readonly effect?: 'push' | 'pin' | 'teleport';
+  readonly effect?: 'push' | 'pin' | 'teleport' | 'heal' | 'dash';
   readonly effectValue?: number; // push distance, pin turns, etc.
 }
 
@@ -79,10 +82,12 @@ export type IntentAction =
   | { type: 'move'; target: Position }
   | { type: 'attack'; target: Position; damage: number }
   | { type: 'spawn' }
-  | { type: 'idle' };
+  | { type: 'idle' }
+  | { type: 'buff' };
 
 export interface Intent {
   readonly actions: readonly IntentAction[];
+  readonly dangerTiles?: readonly Position[];
 }
 
 export interface EnemyState {
@@ -94,6 +99,7 @@ export interface EnemyState {
   readonly intent: Intent | null;
   readonly turnsSinceSpawn: number; // for Spawner tracking
   readonly pinned: boolean;
+  readonly buffed: boolean;
 }
 
 // --- Game State ---

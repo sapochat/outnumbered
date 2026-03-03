@@ -40,14 +40,20 @@ const ENEMY_NAMES: Record<EnemyType, string> = {
   [EnemyType.GRUNT]: 'Grunt',
   [EnemyType.ARCHER]: 'Archer',
   [EnemyType.SPAWNER]: 'Spawner',
-  [EnemyType.BOSS]: 'BOSS',
+  [EnemyType.CHARGER]: 'Charger',
+  [EnemyType.SHIELD]: 'Shield',
+  [EnemyType.WARLORD]: 'WARLORD',
+  [EnemyType.QUEEN]: 'QUEEN',
 };
 
 const ENEMY_COLORS: Record<EnemyType, string> = {
   [EnemyType.GRUNT]: 'red',
   [EnemyType.ARCHER]: 'yellow',
   [EnemyType.SPAWNER]: 'redBright',
-  [EnemyType.BOSS]: 'white',
+  [EnemyType.CHARGER]: 'yellowBright',
+  [EnemyType.SHIELD]: 'blueBright',
+  [EnemyType.WARLORD]: 'white',
+  [EnemyType.QUEEN]: 'magentaBright',
 };
 
 function hpColor(hp: number, maxHp: number): string {
@@ -80,6 +86,8 @@ function intentDescription(action: IntentAction): string {
       return 'SPAWN new grunt';
     case 'idle':
       return 'Idle';
+    case 'buff':
+      return 'WAR CRY! +1 dmg';
   }
 }
 
