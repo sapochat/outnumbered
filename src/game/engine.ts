@@ -35,7 +35,7 @@ export function advancePhase(run: RunState): RunState {
   switch (run.phase) {
     case GamePhase.ENEMY_INTENT: {
       const enemies = run.floor.enemies.map(e =>
-        ({ ...e, intent: generateIntent(e, run.units, run.floor.enemies) }),
+        ({ ...e, intent: generateIntent(e, run.units, run.floor.enemies), buffed: false }),
       );
       return {
         ...run,

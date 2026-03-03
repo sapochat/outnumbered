@@ -135,6 +135,8 @@ export function resolveEnemyIntents(
         }
         case 'idle':
           break;
+        case 'buff':
+          break;
       }
     }
 
@@ -145,6 +147,20 @@ export function resolveEnemyIntents(
       pinned: false,
     };
     newEnemies.push(current);
+  }
+
+  const shouldBuff = enemies.some(e =>
+    e.intent?.actions.some(a => a.type === 'buff'),
+  );
+
+  if (shouldBuff) {
+    return {
+      enemies: newEnemies.map(e =>
+        e.enemyType === EnemyType.GRUNT ? { ...e, buffed: true } : e,
+      ),
+      units: newUnits,
+      newSpawns,
+    };
   }
 
   return {

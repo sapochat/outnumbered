@@ -185,6 +185,37 @@ function warlordIntent(enemy: EnemyState, units: readonly UnitState[], occupied:
   return { actions };
 }
 
+function queenIntent(enemy: EnemyState, units: readonly UnitState[]): Intent {
+  const actions: IntentAction[] = [];
+  const phase2 = enemy.hp <= enemy.maxHp / 2;
+  const attackRange = phase2 ? 6 : 4;
+
+  if (phase2 || enemy.turnsSinceSpawn >= 1) {
+    actions.push({ type: 'spawn' });
+  }
+
+  const nearest = findNearestUnit(enemy.position, units);
+  if (nearest) {
+    const dir = getDirectionBetween(enemy.position, nearest.position);
+    if (dir) {
+      const tiles = getTilesInLine(enemy.position, dir, attackRange);
+      for (const tile of tiles) {
+        actions.push({ type: 'attack', target: tile, damage: 2 });
+      }
+    }
+  }
+
+  if (phase2 && nearest) {
+    const crossTiles = getAdjacent(nearest.position);
+    for (const tile of crossTiles) {
+      actions.push({ type: 'attack', target: tile, damage: 3 });
+    }
+  }
+
+  if (actions.length === 0) actions.push({ type: 'idle' });
+  return { actions };
+}
+
 function shieldIntent(enemy: EnemyState, allEnemies: readonly EnemyState[], occupied: readonly Position[]): Intent {
   if (enemy.pinned) return { actions: [{ type: 'idle' }] };
 
@@ -220,7 +251,7 @@ export function generateIntent(
     case EnemyType.CHARGER: return chargerIntent(enemy, units, occupied);
     case EnemyType.SHIELD:  return shieldIntent(enemy, allEnemies, occupied);
     case EnemyType.WARLORD: return warlordIntent(enemy, units, occupied);
-    case EnemyType.QUEEN:   return { actions: [{ type: 'idle' }] };
+    case EnemyType.QUEEN:   return queenIntent(enemy, units);
   }
 }
 
