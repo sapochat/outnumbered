@@ -12,7 +12,7 @@ import {
 import { advancePhase, isFloorCleared, isGameOver, isRunWon } from '../game/engine.js';
 import { moveUnit, markActed } from '../game/units.js';
 import { executeAbility } from '../game/combat.js';
-import { manhattanDistance } from '../game/grid.js';
+import { manhattanDistance, getDirectionBetween } from '../game/grid.js';
 import { ENEMY_TYPE_DEFS } from '../data/enemy-defs.js';
 
 type Screen = 'title' | 'game' | 'reward' | 'game_over' | 'victory';
@@ -282,6 +282,62 @@ export const GameScreen: React.FC<GameScreenProps> = ({ run, setRun, setScreen, 
         );
         setRun({ ...run, units: newUnits });
         setMessage(`Warped to (${target.col},${target.row})!`);
+        return;
+      }
+
+      if (ability.effect === 'heal') {
+        const dist = manhattanDistance(selectedUnit.position, target);
+        if (dist > 1) {
+          setMessage('Heal requires adjacent target or self.');
+          return;
+        }
+        const targetUnitIdx = run.units.findIndex(u => u.hp > 0 && posEqual(u.position, target));
+        if (targetUnitIdx === -1) {
+          setMessage('No ally at that position.');
+          return;
+        }
+        const healAmount = ability.effectValue ?? 2;
+        const newUnits = run.units.map((u, i) => {
+          if (i === targetUnitIdx) {
+            return { ...u, hp: Math.min(u.maxHp, u.hp + healAmount) };
+          }
+          if (i === run.selectedUnitIndex) {
+            return markActed(u);
+          }
+          return u;
+        });
+        setRun({ ...run, units: newUnits });
+        setMessage(`Healed for ${healAmount} HP!`);
+        return;
+      }
+
+      if (ability.effect === 'dash') {
+        const dir = getDirectionBetween(selectedUnit.position, target);
+        if (!dir) {
+          setMessage('Dash requires a straight line (cardinal direction).');
+          return;
+        }
+        const maxDist = ability.effectValue ?? 4;
+        const dist = manhattanDistance(selectedUnit.position, target);
+        if (dist > maxDist) {
+          setMessage(`Dash max range is ${maxDist}.`);
+          return;
+        }
+        const occupied = [
+          ...run.units.filter(u => u.hp > 0 && u.id !== selectedUnit.id).map(u => u.position),
+          ...run.floor.enemies.filter(e => e.hp > 0).map(e => e.position),
+        ];
+        if (occupied.some(p => posEqual(p, target))) {
+          setMessage('Cannot dash to occupied tile.');
+          return;
+        }
+        const newUnits = run.units.map((u, i) =>
+          i === run.selectedUnitIndex
+            ? markActed({ ...u, position: target })
+            : u,
+        );
+        setRun({ ...run, units: newUnits });
+        setMessage(`Dashed to (${target.col},${target.row})!`);
         return;
       }
 
