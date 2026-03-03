@@ -65,6 +65,9 @@ export const GridPanel: React.FC<GridPanelProps> = ({
   selectedUnitIndex,
 }) => {
   const dangerTiles = getDangerTiles(enemies);
+  const warCryActive = enemies.some(
+    e => e.intent?.actions.some(a => a.type === 'buff'),
+  );
 
   const renderCell = (col: number, row: number): React.ReactNode => {
     const pos: Position = { col, row };
@@ -95,13 +98,16 @@ export const GridPanel: React.FC<GridPanelProps> = ({
     if (enemy) {
       const def = ENEMY_TYPE_DEFS[enemy.enemyType];
       const color = ENEMY_COLORS[enemy.enemyType];
+      const isWarCryTarget = warCryActive && enemy.enemyType === EnemyType.GRUNT;
       const bgColor = isCursor
         ? 'yellow'
         : enemy.enemyType === EnemyType.WARLORD || enemy.enemyType === EnemyType.QUEEN
           ? 'red'
-          : isDanger
-            ? 'red'
-            : undefined;
+          : isWarCryTarget
+            ? 'yellowBright'
+            : isDanger
+              ? 'red'
+              : undefined;
       return (
         <Text
           key={`${col}-${row}`}

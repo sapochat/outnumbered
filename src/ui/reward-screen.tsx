@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Box, Text, useInput } from 'ink';
-import { type Ability, AbilitySlot, type RunState, UnitClass, createPosition } from '../game/types.js';
+import { type Ability, AbilitySlot, type RunState, UnitClass, createPosition, posKey } from '../game/types.js';
 import { createUnit, healUnit } from '../game/units.js';
 import { advanceToNextFloor } from '../game/engine.js';
 import { ATTACK_ABILITIES, UTILITY_ABILITIES } from '../data/ability-pool.js';
@@ -25,7 +25,7 @@ function generateRewards(run: RunState): Reward[] {
   pool.push({ type: 'ability_attack', label: 'NEW ATTACK', description: 'Learn a new attack ability' });
   pool.push({ type: 'ability_utility', label: 'NEW UTILITY', description: 'Learn a new utility ability' });
   // Shuffle and take 3
-  const shuffled = pool.sort(() => Math.random() - 0.5);
+  const shuffled = [...pool].sort(() => Math.random() - 0.5);
   return shuffled.slice(0, 3);
 }
 
@@ -94,14 +94,14 @@ export const RewardScreen: React.FC<Props> = ({ run, unlockedClasses, onSelect }
       if (input === 's' || key.downArrow) setRecruitPick(s => Math.min(classes.length - 1, s + 1));
       if (key.return) {
         const chosenClass = classes[recruitPick];
-        const occupied = new Set(
-          [...run.units.map(u => `${u.position.col},${u.position.row}`),
-           ...run.floor.enemies.map(e => `${e.position.col},${e.position.row}`)],
-        );
+        const occupied = new Set([
+          ...run.units.map(u => posKey(u.position)),
+          ...run.floor.enemies.map(e => posKey(e.position)),
+        ]);
         let spawnPos = createPosition(2, 5);
         for (let c = 1; c <= 4; c++) {
           for (let r = 1; r <= 8; r++) {
-            if (!occupied.has(`${c},${r}`)) {
+            if (!occupied.has(posKey(createPosition(c, r)))) {
               spawnPos = createPosition(c, r);
               break;
             }
