@@ -32,13 +32,13 @@ describe('Enemies', () => {
 
     it('Grunt moves toward nearest player unit', () => {
       const grunt = createEnemy(EnemyType.GRUNT, createPosition(5, 3));
-      const intent = generateIntent(grunt, playerUnits, []);
+      const intent = generateIntent(grunt, playerUnits, [grunt]);
       expect(intent.actions[0]).toEqual({ type: 'move', target: { col: 4, row: 3 } });
     });
 
     it('Grunt attacks adjacent player', () => {
       const grunt = createEnemy(EnemyType.GRUNT, createPosition(4, 3));
-      const intent = generateIntent(grunt, playerUnits, []);
+      const intent = generateIntent(grunt, playerUnits, [grunt]);
       expect(intent.actions).toContainEqual(
         expect.objectContaining({ type: 'attack', damage: 1 })
       );
@@ -46,7 +46,7 @@ describe('Enemies', () => {
 
     it('Archer attacks in a straight line toward player', () => {
       const archer = createEnemy(EnemyType.ARCHER, createPosition(6, 3));
-      const intent = generateIntent(archer, playerUnits, []);
+      const intent = generateIntent(archer, playerUnits, [archer]);
       expect(intent.actions).toContainEqual(
         expect.objectContaining({ type: 'attack' })
       );
@@ -54,21 +54,47 @@ describe('Enemies', () => {
 
     it('Spawner generates spawn intent every 2 turns', () => {
       const spawner = { ...createEnemy(EnemyType.SPAWNER, createPosition(7, 7)), turnsSinceSpawn: 1 };
-      const intent = generateIntent(spawner, playerUnits, []);
+      const intent = generateIntent(spawner, playerUnits, [spawner]);
       expect(intent.actions).toContainEqual({ type: 'spawn' });
     });
 
     it('Spawner idles when not ready to spawn', () => {
       const spawner = createEnemy(EnemyType.SPAWNER, createPosition(7, 7));
-      const intent = generateIntent(spawner, playerUnits, []);
+      const intent = generateIntent(spawner, playerUnits, [spawner]);
       expect(intent.actions).toContainEqual({ type: 'idle' });
     });
 
     it('pinned enemy does not move', () => {
       const grunt = { ...createEnemy(EnemyType.GRUNT, createPosition(5, 3)), pinned: true };
-      const intent = generateIntent(grunt, playerUnits, []);
+      const intent = generateIntent(grunt, playerUnits, [grunt]);
       const moveActions = intent.actions.filter(a => a.type === 'move');
       expect(moveActions).toHaveLength(0);
+    });
+
+    it('Charger charges toward nearest player in cardinal direction', () => {
+      const charger = createEnemy(EnemyType.CHARGER, createPosition(6, 3));
+      const intent = generateIntent(charger, playerUnits, [charger]);
+      expect(intent.actions[0]).toEqual(
+        expect.objectContaining({ type: 'move' })
+      );
+      expect(intent.dangerTiles).toBeDefined();
+      expect(intent.dangerTiles!.length).toBeGreaterThan(0);
+    });
+
+    it('Charger attacks player in its charge path', () => {
+      const charger = createEnemy(EnemyType.CHARGER, createPosition(5, 3));
+      const intent = generateIntent(charger, playerUnits, [charger]);
+      const attackAction = intent.actions.find(a => a.type === 'attack');
+      expect(attackAction).toBeDefined();
+      if (attackAction && attackAction.type === 'attack') {
+        expect(attackAction.damage).toBe(2);
+      }
+    });
+
+    it('pinned Charger idles', () => {
+      const charger = { ...createEnemy(EnemyType.CHARGER, createPosition(6, 3)), pinned: true };
+      const intent = generateIntent(charger, playerUnits, [charger]);
+      expect(intent.actions).toContainEqual({ type: 'idle' });
     });
   });
 });

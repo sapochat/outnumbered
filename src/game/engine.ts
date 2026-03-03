@@ -34,9 +34,8 @@ function createFloor(floorNumber: number): FloorState {
 export function advancePhase(run: RunState): RunState {
   switch (run.phase) {
     case GamePhase.ENEMY_INTENT: {
-      const enemyPositions = run.floor.enemies.map(e => e.position);
       const enemies = run.floor.enemies.map(e =>
-        ({ ...e, intent: generateIntent(e, run.units, enemyPositions) }),
+        ({ ...e, intent: generateIntent(e, run.units, run.floor.enemies) }),
       );
       return {
         ...run,
