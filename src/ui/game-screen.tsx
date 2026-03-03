@@ -11,13 +11,13 @@ import {
   EnemyType,
   posEqual,
 } from '../game/types.js';
-import { advancePhase, isFloorCleared, isGameOver } from '../game/engine.js';
+import { advancePhase, isFloorCleared, isGameOver, isRunWon } from '../game/engine.js';
 import { moveUnit, markActed } from '../game/units.js';
 import { executeAbility } from '../game/combat.js';
 import { manhattanDistance } from '../game/grid.js';
 import { ENEMY_TYPE_DEFS } from '../data/enemy-defs.js';
 
-type Screen = 'title' | 'game' | 'reward' | 'game_over';
+type Screen = 'title' | 'game' | 'reward' | 'game_over' | 'victory';
 
 interface GameScreenProps {
   readonly run: RunState;
@@ -303,7 +303,11 @@ export const GameScreen: React.FC<GameScreenProps> = ({ run, setRun, setScreen, 
       // Check floor cleared
       if (isFloorCleared(next)) {
         setRun(next);
-        setScreen('reward');
+        if (isRunWon(next)) {
+          setScreen('victory');
+        } else {
+          setScreen('reward');
+        }
         return;
       }
       // Advance to PLAYER_ACTION (generate intents)

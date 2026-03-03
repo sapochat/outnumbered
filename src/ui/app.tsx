@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Box, Text, useInput, useApp } from 'ink';
 import { GameScreen } from './game-screen.js';
+import { RewardScreen } from './reward-screen.js';
 import { type RunState, UnitClass } from '../game/types.js';
 import { createNewRun, advancePhase } from '../game/engine.js';
 
-type Screen = 'title' | 'game' | 'reward' | 'game_over';
+type Screen = 'title' | 'game' | 'reward' | 'game_over' | 'victory';
 
 export const App: React.FC = () => {
   const { exit } = useApp();
@@ -19,7 +20,7 @@ export const App: React.FC = () => {
         return;
       }
 
-      if (screen === 'title' || screen === 'game_over') {
+      if (screen === 'title' || screen === 'game_over' || screen === 'victory') {
         if (key.return) {
           const newRun = createNewRun(UnitClass.VANGUARD);
           const withIntents = advancePhase(newRun);
@@ -27,15 +28,8 @@ export const App: React.FC = () => {
           setScreen('game');
         }
       }
-
-      if (screen === 'reward') {
-        if (key.return) {
-          // Placeholder: just go back to title for now (Task 10 adds real logic)
-          setScreen('title');
-        }
-      }
     },
-    { isActive: screen !== 'game' },
+    { isActive: screen !== 'game' && screen !== 'reward' },
   );
 
   if (screen === 'title') {
@@ -108,24 +102,39 @@ export const App: React.FC = () => {
     );
   }
 
-  if (screen === 'reward') {
+  if (screen === 'reward' && run) {
+    return (
+      <RewardScreen
+        run={run}
+        onSelect={(updatedRun) => {
+          const withIntents = advancePhase(updatedRun);
+          setRun(withIntents);
+          setScreen('game');
+        }}
+      />
+    );
+  }
+
+  if (screen === 'victory' && run) {
     return (
       <Box flexDirection="column" alignItems="center" padding={2}>
-        <Box
-          borderStyle="double"
-          borderColor="yellow"
-          paddingX={4}
-          paddingY={1}
-        >
-          <Text bold color="yellow">
-            F L O O R   C L E A R E D !
+        <Box borderStyle="double" borderColor="green" paddingX={4} paddingY={1}>
+          <Text bold color="green">
+            V I C T O R Y !
           </Text>
         </Box>
         <Box marginTop={1}>
-          <Text dimColor>Reward screen coming in Task 10</Text>
+          <Text>You cleared all 10 floors!</Text>
         </Box>
-        <Box marginTop={2}>
-          <Text color="yellow">[Enter] Continue</Text>
+        <Box marginTop={1}>
+          <Text>
+            Final Score:{' '}
+            <Text bold color="yellow">{run.score}</Text>
+          </Text>
+        </Box>
+        <Box marginTop={2} flexDirection="column" alignItems="center">
+          <Text color="yellow">[Enter] New Run</Text>
+          <Text color="gray">[Q] Quit</Text>
         </Box>
       </Box>
     );
