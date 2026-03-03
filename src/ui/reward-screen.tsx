@@ -31,17 +31,19 @@ function generateRewards(run: RunState): Reward[] {
 
 interface Props {
   run: RunState;
+  unlockedClasses: readonly UnitClass[];
   onSelect: (updatedRun: RunState) => void;
 }
 
-export const RewardScreen: React.FC<Props> = ({ run, onSelect }) => {
+export const RewardScreen: React.FC<Props> = ({ run, unlockedClasses, onSelect }) => {
   const rewards = useMemo(() => generateRewards(run), []);
   const [selected, setSelected] = useState(0);
-  const [subFlow, setSubFlow] = useState<'main' | 'pick_unit' | 'pick_ability'>('main');
+  const [subFlow, setSubFlow] = useState<'main' | 'pick_unit' | 'pick_ability' | 'pick_recruit'>('main');
   const [pendingReward, setPendingReward] = useState<RewardType | null>(null);
   const [unitPick, setUnitPick] = useState(0);
   const [abilityOptions, setAbilityOptions] = useState<Ability[]>([]);
   const [abilityPick, setAbilityPick] = useState(0);
+  const [recruitPick, setRecruitPick] = useState(0);
 
   useInput((input, key) => {
     if (subFlow === 'pick_unit') {
@@ -86,6 +88,36 @@ export const RewardScreen: React.FC<Props> = ({ run, onSelect }) => {
       return;
     }
 
+    if (subFlow === 'pick_recruit') {
+      const classes = unlockedClasses;
+      if (input === 'w' || key.upArrow) setRecruitPick(s => Math.max(0, s - 1));
+      if (input === 's' || key.downArrow) setRecruitPick(s => Math.min(classes.length - 1, s + 1));
+      if (key.return) {
+        const chosenClass = classes[recruitPick];
+        const occupied = new Set(
+          [...run.units.map(u => `${u.position.col},${u.position.row}`),
+           ...run.floor.enemies.map(e => `${e.position.col},${e.position.row}`)],
+        );
+        let spawnPos = createPosition(2, 5);
+        for (let c = 1; c <= 4; c++) {
+          for (let r = 1; r <= 8; r++) {
+            if (!occupied.has(`${c},${r}`)) {
+              spawnPos = createPosition(c, r);
+              break;
+            }
+          }
+          if (spawnPos.col !== 2 || spawnPos.row !== 5) break;
+        }
+        const newUnit = createUnit(chosenClass, spawnPos);
+        const updatedRun = { ...run, units: [...run.units, newUnit] };
+        onSelect(advanceToNextFloor(updatedRun));
+      }
+      if (key.escape || input === 'q') {
+        setSubFlow('main');
+      }
+      return;
+    }
+
     if (input === 'w' || key.upArrow) setSelected(s => Math.max(0, s - 1));
     if (input === 's' || key.downArrow) setSelected(s => Math.min(rewards.length - 1, s + 1));
 
@@ -122,9 +154,9 @@ export const RewardScreen: React.FC<Props> = ({ run, onSelect }) => {
           };
           break;
         case 'recruit': {
-          const newUnit = createUnit(UnitClass.RANGER, createPosition(2, 5));
-          updatedRun = { ...run, units: [...run.units, newUnit] };
-          break;
+          setSubFlow('pick_recruit');
+          setRecruitPick(0);
+          return;
         }
       }
 
@@ -185,6 +217,44 @@ export const RewardScreen: React.FC<Props> = ({ run, onSelect }) => {
         </Box>
         <Box marginTop={1}>
           <Text dimColor>[W/S] Navigate  [Enter] Confirm  [Q] Back</Text>
+        </Box>
+      </Box>
+    );
+  }
+
+  if (subFlow === 'pick_recruit') {
+    const CLASS_NAMES: Record<UnitClass, string> = {
+      [UnitClass.VANGUARD]: 'Vanguard',
+      [UnitClass.RANGER]: 'Ranger',
+      [UnitClass.ARCANIST]: 'Arcanist',
+    };
+    const CLASS_DESCS: Record<UnitClass, string> = {
+      [UnitClass.VANGUARD]: 'HP 6, Move 2 — Slash + Shove',
+      [UnitClass.RANGER]: 'HP 4, Move 3 — Shoot + Pin',
+      [UnitClass.ARCANIST]: 'HP 3, Move 3 — Bolt + Warp',
+    };
+    return (
+      <Box flexDirection="column" alignItems="center" padding={2}>
+        <Text bold color="yellow">Choose a class to recruit:</Text>
+        <Box flexDirection="column" marginTop={1} width={40}>
+          {unlockedClasses.map((uc, i) => (
+            <Box
+              key={uc}
+              borderStyle={i === recruitPick ? 'double' : 'single'}
+              borderColor={i === recruitPick ? 'yellow' : 'gray'}
+              paddingX={2}
+              marginTop={i > 0 ? 1 : 0}
+              flexDirection="column"
+            >
+              <Text bold={i === recruitPick} color={i === recruitPick ? 'yellow' : 'white'}>
+                {i === recruitPick ? '> ' : '  '}{CLASS_NAMES[uc]}
+              </Text>
+              <Text dimColor>  {CLASS_DESCS[uc]}</Text>
+            </Box>
+          ))}
+        </Box>
+        <Box marginTop={1}>
+          <Text dimColor>[W/S] Navigate  [Enter] Recruit  [Q] Back</Text>
         </Box>
       </Box>
     );
