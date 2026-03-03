@@ -4,18 +4,7 @@ A tactical roguelike played entirely in the terminal. Lead a squad of three thro
 
 Built with [Ink](https://github.com/vadimdemedes/ink) (React for CLIs) and TypeScript.
 
-```
-  ┌────────────────────────────────────────┐
-  │  ·    ·    ·    ·    ·    ·    ·    ·  │
-  │  ·    @    ·    ·    ·    ▓    ·    ·  │
-  │  ·    ·    @    ·    ·    ░    ·    ·  │
-  │  ·    ·    ·    ·    ►    ·    ·    Q  │
-  │  ·    @    ·    ·    ·    ·    ■    ·  │
-  │  ·    ·    ·    ·    ·    ▓    ·    ·  │
-  │  ·    ·    ·    ·    ·    ·    ·    ·  │
-  │  ·    ·    ·    ·    ·    ·    ▓    ·  │
-  └────────────────────────────────────────┘
-```
+![Outnumbered gameplay](screenshot.png)
 
 ## Install & Play
 
