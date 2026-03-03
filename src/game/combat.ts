@@ -9,6 +9,13 @@ import { applyDamage } from './units.js';
 import { applyEnemyDamage, createEnemy } from './enemies.js';
 import { getAdjacent, getDirectionBetween, manhattanDistance } from './grid.js';
 
+function hasAdjacentShield(target: Position, enemies: readonly EnemyState[]): boolean {
+  const adjacent = getAdjacent(target);
+  return enemies.some(
+    e => e.enemyType === EnemyType.SHIELD && e.hp > 0 && adjacent.some(a => posEqual(a, e.position)),
+  );
+}
+
 interface AbilityResult {
   enemies: EnemyState[];
   units: UnitState[];
@@ -34,15 +41,20 @@ export function executeAbility(
             getDirectionBetween(unit.position, e.position) === dir &&
             manhattanDistance(unit.position, e.position) <= ability.range
           ) {
-            return applyEnemyDamage(e, ability.damage);
+            const shielded = hasAdjacentShield(e.position, newEnemies);
+            const effectiveDamage = Math.max(0, ability.damage - (shielded ? 1 : 0));
+            return applyEnemyDamage(e, effectiveDamage);
           }
           return e;
         });
       }
     } else {
-      newEnemies = newEnemies.map(e =>
-        posEqual(e.position, target) ? applyEnemyDamage(e, ability.damage) : e,
-      );
+      newEnemies = newEnemies.map(e => {
+        if (!posEqual(e.position, target)) return e;
+        const shielded = hasAdjacentShield(e.position, newEnemies);
+        const effectiveDamage = Math.max(0, ability.damage - (shielded ? 1 : 0));
+        return applyEnemyDamage(e, effectiveDamage);
+      });
     }
   }
 
