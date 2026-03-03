@@ -4,7 +4,6 @@ import {
   type Position,
   type UnitState,
   type EnemyState,
-  type IntentAction,
   UnitClass,
   EnemyType,
   posEqual,
@@ -137,7 +136,7 @@ export const GridPanel: React.FC<GridPanelProps> = ({
     <Box flexDirection="column" alignItems="center">
       {/* Column headers */}
       <Box>
-        <Text color="gray">{'  '}</Text>
+        <Text color="gray">{'   '}</Text>
         {Array.from({ length: 8 }, (_, i) => (
           <Text key={i} color="gray">
             {padCenter(String(i + 1), CELL_WIDTH)}
@@ -158,7 +157,7 @@ export const GridPanel: React.FC<GridPanelProps> = ({
         const row = rowIdx + 1;
         return (
           <Box key={row}>
-            <Text color="gray">{' │'}</Text>
+            <Text color="gray">{'  │'}</Text>
             {Array.from({ length: 8 }, (_, colIdx) => {
               const col = colIdx + 1;
               return renderCell(col, row);

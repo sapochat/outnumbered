@@ -3,8 +3,6 @@ import { Box, Text, useInput } from 'ink';
 import { GridPanel } from './grid-panel.js';
 import {
   type RunState,
-  type UnitState,
-  type EnemyState,
   type IntentAction,
   GamePhase,
   UnitClass,
@@ -49,7 +47,7 @@ const ENEMY_COLORS: Record<EnemyType, string> = {
   [EnemyType.GRUNT]: 'red',
   [EnemyType.ARCHER]: 'yellow',
   [EnemyType.SPAWNER]: 'redBright',
-  [EnemyType.BOSS]: 'redBright',
+  [EnemyType.BOSS]: 'white',
 };
 
 function hpColor(hp: number, maxHp: number): string {
@@ -91,10 +89,12 @@ function statusMessage(run: RunState): string {
 
   const parts: string[] = [];
   if (run.phase === GamePhase.PLAYER_ACTION) {
+    parts.push('[WASD/Arrows] Cursor');
     if (!unit.hasMoved) parts.push('[Enter] Move');
     if (!unit.hasActed) parts.push('[1] Attack  [2] Utility');
     parts.push('[Space] End Turn');
     parts.push('[Tab] Cycle Unit');
+    parts.push('[Q] Quit');
   } else {
     parts.push(`Phase: ${run.phase}`);
   }
@@ -103,13 +103,24 @@ function statusMessage(run: RunState): string {
 
 export const GameScreen: React.FC<GameScreenProps> = ({ run, setRun, setScreen, onQuit }) => {
   const [message, setMessage] = useState<string>('');
+  const [confirmQuit, setConfirmQuit] = useState(false);
 
   const selectedUnit = run.units[run.selectedUnitIndex];
 
   useInput((input, key) => {
+    // Handle quit confirmation
+    if (confirmQuit) {
+      if (input === 'y' || input === 'Y') {
+        onQuit();
+      } else {
+        setConfirmQuit(false);
+      }
+      return;
+    }
+
     // Quit from game screen
     if (input === 'q') {
-      onQuit();
+      setConfirmQuit(true);
       return;
     }
 
@@ -317,6 +328,17 @@ export const GameScreen: React.FC<GameScreenProps> = ({ run, setRun, setScreen, 
       return;
     }
   });
+
+  if (confirmQuit) {
+    return (
+      <Box flexDirection="column" alignItems="center" padding={4}>
+        <Text bold color="yellow">Quit game?</Text>
+        <Box marginTop={1}>
+          <Text>[Y] Yes    [N] No</Text>
+        </Box>
+      </Box>
+    );
+  }
 
   return (
     <Box flexDirection="column">
