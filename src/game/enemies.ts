@@ -7,7 +7,7 @@ import {
   EnemyType,
   posEqual,
 } from './types.js';
-import { manhattanDistance, getAdjacent, getDirectionBetween } from './grid.js';
+import { type Direction, manhattanDistance, getAdjacent, getDirectionBetween, getTilesInLine } from './grid.js';
 import { ENEMY_TYPE_DEFS } from '../data/enemy-defs.js';
 
 let nextEnemyId = 1;
@@ -101,17 +101,61 @@ function spawnerIntent(enemy: EnemyState): Intent {
   return { actions: [{ type: 'idle' }] };
 }
 
+function chargerIntent(enemy: EnemyState, units: readonly UnitState[], occupied: readonly Position[]): Intent {
+  if (enemy.pinned) return { actions: [{ type: 'idle' }] };
+
+  const nearest = findNearestUnit(enemy.position, units);
+  if (!nearest) return { actions: [{ type: 'idle' }] };
+
+  const dc = nearest.position.col - enemy.position.col;
+  const dr = nearest.position.row - enemy.position.row;
+  let direction: Direction;
+  if (Math.abs(dc) >= Math.abs(dr)) {
+    direction = dc > 0 ? 'east' : 'west';
+  } else {
+    direction = dr > 0 ? 'south' : 'north';
+  }
+
+  const tilesInLine = getTilesInLine(enemy.position, direction, 8);
+  const actions: IntentAction[] = [];
+  const dangerTiles: Position[] = [];
+  let landingTile = enemy.position;
+
+  for (const tile of tilesInLine) {
+    const hitUnit = units.find(u => u.hp > 0 && posEqual(u.position, tile));
+    const hitEnemy = occupied.some(p => posEqual(p, tile));
+
+    if (hitUnit) {
+      dangerTiles.push(tile);
+      actions.push({ type: 'move', target: landingTile });
+      actions.push({ type: 'attack', target: tile, damage: 2 });
+      return { actions, dangerTiles };
+    }
+
+    if (hitEnemy) {
+      actions.push({ type: 'move', target: landingTile });
+      return { actions, dangerTiles };
+    }
+
+    dangerTiles.push(tile);
+    landingTile = tile;
+  }
+
+  actions.push({ type: 'move', target: landingTile });
+  return { actions, dangerTiles };
+}
+
 export function generateIntent(
   enemy: EnemyState,
   units: readonly UnitState[],
-  allEnemyPositions: readonly Position[],
+  allEnemies: readonly EnemyState[],
 ): Intent {
-  const occupied = allEnemyPositions.filter(p => !posEqual(p, enemy.position));
+  const occupied = allEnemies.filter(e => e.id !== enemy.id).map(e => e.position);
   switch (enemy.enemyType) {
     case EnemyType.GRUNT:   return gruntIntent(enemy, units, occupied);
     case EnemyType.ARCHER:  return archerIntent(enemy, units);
     case EnemyType.SPAWNER: return spawnerIntent(enemy);
-    case EnemyType.CHARGER: return { actions: [{ type: 'idle' }] };
+    case EnemyType.CHARGER: return chargerIntent(enemy, units, occupied);
     case EnemyType.SHIELD:  return { actions: [{ type: 'idle' }] };
     case EnemyType.WARLORD: return gruntIntent(enemy, units, occupied);
     case EnemyType.QUEEN:   return { actions: [{ type: 'idle' }] };
