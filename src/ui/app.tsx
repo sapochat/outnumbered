@@ -13,6 +13,7 @@ export const App: React.FC = () => {
   const [screen, setScreen] = useState<Screen>('title');
   const [run, setRun] = useState<RunState | null>(null);
   const [meta, setMeta] = useState<MetaState>(() => loadMeta());
+  const [confirmQuit, setConfirmQuit] = useState(false);
 
   // Wrapper around setScreen that triggers persistence side effects
   const handleScreenChange = useCallback(
@@ -47,8 +48,18 @@ export const App: React.FC = () => {
   // Input only active when NOT on game screen (game screen has its own handler)
   useInput(
     (input, key) => {
+      // Handle quit confirmation
+      if (confirmQuit) {
+        if (input === 'y' || input === 'Y') {
+          exit();
+        } else {
+          setConfirmQuit(false);
+        }
+        return;
+      }
+
       if (input === 'q') {
-        exit();
+        setConfirmQuit(true);
         return;
       }
 
@@ -63,6 +74,17 @@ export const App: React.FC = () => {
     },
     { isActive: screen !== 'game' && screen !== 'reward' },
   );
+
+  if (confirmQuit) {
+    return (
+      <Box flexDirection="column" alignItems="center" padding={4}>
+        <Text bold color="yellow">Quit game?</Text>
+        <Box marginTop={1}>
+          <Text>[Y] Yes    [N] No</Text>
+        </Box>
+      </Box>
+    );
+  }
 
   if (screen === 'title') {
     return (
