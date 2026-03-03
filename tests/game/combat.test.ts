@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { executeAbility, resolveEnemyIntents } from '../../src/game/combat.js';
 import { createUnit } from '../../src/game/units.js';
 import { createEnemy } from '../../src/game/enemies.js';
-import { createPosition, UnitClass, EnemyType, type EnemyState } from '../../src/game/types.js';
+import { createPosition, UnitClass, EnemyType, AbilitySlot, type EnemyState, type Ability } from '../../src/game/types.js';
 
 describe('Combat', () => {
   describe('executeAbility', () => {
@@ -64,6 +64,21 @@ describe('Combat', () => {
       const shield = createEnemy(EnemyType.SHIELD, createPosition(7, 7));
       const result = executeAbility(unit, 0, createPosition(4, 3), [unit], [grunt, shield]);
       expect(result.enemies[0].hp).toBe(1); // normal 1 damage
+    });
+
+    it('Stun deals damage AND pins', () => {
+      const stunAbility: Ability = {
+        name: 'Stun', slot: AbilitySlot.UTILITY, range: 2, damage: 1,
+        description: 'test', aoe: 'single', effect: 'pin', effectValue: 1,
+      };
+      const unit = {
+        ...createUnit(UnitClass.RANGER, createPosition(1, 3)),
+        abilities: [createUnit(UnitClass.RANGER, createPosition(1, 3)).abilities[0], stunAbility] as readonly [Ability, Ability],
+      };
+      const enemy = createEnemy(EnemyType.GRUNT, createPosition(3, 3));
+      const result = executeAbility(unit, 1, createPosition(3, 3), [unit], [enemy]);
+      expect(result.enemies[0].hp).toBe(1);
+      expect(result.enemies[0].pinned).toBe(true);
     });
   });
 
