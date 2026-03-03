@@ -96,5 +96,109 @@ describe('Enemies', () => {
       const intent = generateIntent(charger, playerUnits, [charger]);
       expect(intent.actions).toContainEqual({ type: 'idle' });
     });
+
+    it('Shield moves toward lowest-HP ally', () => {
+      const grunt = { ...createEnemy(EnemyType.GRUNT, createPosition(7, 3)), hp: 1 };
+      const shield = createEnemy(EnemyType.SHIELD, createPosition(5, 3));
+      const intent = generateIntent(shield, playerUnits, [shield, grunt]);
+      expect(intent.actions[0]).toEqual(
+        expect.objectContaining({ type: 'move' })
+      );
+      if (intent.actions[0].type === 'move') {
+        expect(intent.actions[0].target.col).toBe(6);
+      }
+    });
+
+    it('Shield idles when already adjacent to ally', () => {
+      const grunt = createEnemy(EnemyType.GRUNT, createPosition(6, 3));
+      const shield = createEnemy(EnemyType.SHIELD, createPosition(5, 3));
+      const intent = generateIntent(shield, playerUnits, [shield, grunt]);
+      expect(intent.actions).toContainEqual({ type: 'idle' });
+    });
+
+    describe('Warlord', () => {
+      it('attacks for 2 damage when adjacent', () => {
+        const warlord = createEnemy(EnemyType.WARLORD, createPosition(4, 3));
+        const intent = generateIntent(warlord, playerUnits, [warlord]);
+        const attack = intent.actions.find(a => a.type === 'attack');
+        expect(attack).toBeDefined();
+        if (attack && attack.type === 'attack') {
+          expect(attack.damage).toBe(2);
+        }
+      });
+
+      it('war cries every 3 turns', () => {
+        const warlord = { ...createEnemy(EnemyType.WARLORD, createPosition(6, 3)), turnsSinceSpawn: 2 };
+        const intent = generateIntent(warlord, playerUnits, [warlord]);
+        expect(intent.actions).toContainEqual({ type: 'buff' });
+      });
+
+      it('does not war cry on other turns', () => {
+        const warlord = { ...createEnemy(EnemyType.WARLORD, createPosition(6, 3)), turnsSinceSpawn: 1 };
+        const intent = generateIntent(warlord, playerUnits, [warlord]);
+        expect(intent.actions).not.toContainEqual({ type: 'buff' });
+      });
+
+      it('moves 2 tiles when enraged (below 50% HP)', () => {
+        const warlord = { ...createEnemy(EnemyType.WARLORD, createPosition(8, 3)), hp: 4 };
+        const intent = generateIntent(warlord, playerUnits, [warlord]);
+        const moveAction = intent.actions.find(a => a.type === 'move');
+        expect(moveAction).toBeDefined();
+        if (moveAction && moveAction.type === 'move') {
+          expect(moveAction.target.col).toBe(6);
+        }
+      });
+    });
+
+    it('buffed Grunt attacks for 2 damage', () => {
+      const grunt = { ...createEnemy(EnemyType.GRUNT, createPosition(4, 3)), buffed: true };
+      const intent = generateIntent(grunt, playerUnits, [grunt]);
+      const attack = intent.actions.find(a => a.type === 'attack');
+      expect(attack).toBeDefined();
+      if (attack && attack.type === 'attack') {
+        expect(attack.damage).toBe(2);
+      }
+    });
+
+    describe('Queen', () => {
+      it('fires line attack toward nearest player when in cardinal line', () => {
+        const queen = createEnemy(EnemyType.QUEEN, createPosition(6, 3));
+        const intent = generateIntent(queen, playerUnits, [queen]);
+        const attacks = intent.actions.filter(a => a.type === 'attack');
+        expect(attacks.length).toBeGreaterThan(0);
+      });
+
+      it('spawns grunt every 2 turns in phase 1', () => {
+        const queen = { ...createEnemy(EnemyType.QUEEN, createPosition(6, 6)), turnsSinceSpawn: 1 };
+        const intent = generateIntent(queen, playerUnits, [queen]);
+        expect(intent.actions).toContainEqual({ type: 'spawn' });
+      });
+
+      it('does not spawn on off-turns in phase 1', () => {
+        const queen = createEnemy(EnemyType.QUEEN, createPosition(6, 6));
+        const intent = generateIntent(queen, playerUnits, [queen]);
+        expect(intent.actions).not.toContainEqual({ type: 'spawn' });
+      });
+
+      it('spawns every turn in phase 2 (below 50% HP)', () => {
+        const queen = { ...createEnemy(EnemyType.QUEEN, createPosition(6, 6)), hp: 7, turnsSinceSpawn: 0 };
+        const intent = generateIntent(queen, playerUnits, [queen]);
+        expect(intent.actions).toContainEqual({ type: 'spawn' });
+      });
+
+      it('uses cross AoE in phase 2', () => {
+        const queen = { ...createEnemy(EnemyType.QUEEN, createPosition(6, 6)), hp: 7, turnsSinceSpawn: 1 };
+        const intent = generateIntent(queen, playerUnits, [queen]);
+        const attacks = intent.actions.filter(a => a.type === 'attack');
+        expect(attacks.length).toBeGreaterThanOrEqual(4);
+      });
+
+      it('never moves', () => {
+        const queen = createEnemy(EnemyType.QUEEN, createPosition(6, 6));
+        const intent = generateIntent(queen, playerUnits, [queen]);
+        const moves = intent.actions.filter(a => a.type === 'move');
+        expect(moves).toHaveLength(0);
+      });
+    });
   });
 });

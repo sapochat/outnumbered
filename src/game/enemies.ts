@@ -60,22 +60,23 @@ function gruntIntent(enemy: EnemyState, units: readonly UnitState[], occupied: r
   const nearest = findNearestUnit(enemy.position, units);
   if (!nearest) return { actions: [{ type: 'idle' }] };
 
+  const damage = enemy.buffed ? 2 : 1;
   const dist = manhattanDistance(enemy.position, nearest.position);
   const actions: IntentAction[] = [];
 
   if (enemy.pinned) {
     if (dist === 1) {
-      actions.push({ type: 'attack', target: nearest.position, damage: 1 });
+      actions.push({ type: 'attack', target: nearest.position, damage });
     } else {
       actions.push({ type: 'idle' });
     }
   } else if (dist === 1) {
-    actions.push({ type: 'attack', target: nearest.position, damage: 1 });
+    actions.push({ type: 'attack', target: nearest.position, damage });
   } else {
     const moveTarget = stepToward(enemy.position, nearest.position, occupied);
     actions.push({ type: 'move', target: moveTarget });
     if (manhattanDistance(moveTarget, nearest.position) === 1) {
-      actions.push({ type: 'attack', target: nearest.position, damage: 1 });
+      actions.push({ type: 'attack', target: nearest.position, damage });
     }
   }
 
@@ -145,6 +146,67 @@ function chargerIntent(enemy: EnemyState, units: readonly UnitState[], occupied:
   return { actions, dangerTiles };
 }
 
+function warlordIntent(enemy: EnemyState, units: readonly UnitState[], occupied: readonly Position[]): Intent {
+  const nearest = findNearestUnit(enemy.position, units);
+  if (!nearest) return { actions: [{ type: 'idle' }] };
+
+  const actions: IntentAction[] = [];
+  const enraged = enemy.hp <= enemy.maxHp / 2;
+
+  if (enemy.turnsSinceSpawn > 0 && enemy.turnsSinceSpawn % 3 === 2) {
+    actions.push({ type: 'buff' });
+  }
+
+  if (enemy.pinned) {
+    const dist = manhattanDistance(enemy.position, nearest.position);
+    if (dist === 1) {
+      actions.push({ type: 'attack', target: nearest.position, damage: 2 });
+    } else {
+      if (actions.length === 0) actions.push({ type: 'idle' });
+    }
+    return { actions };
+  }
+
+  const dist = manhattanDistance(enemy.position, nearest.position);
+  if (dist === 1) {
+    actions.push({ type: 'attack', target: nearest.position, damage: 2 });
+  } else {
+    let moveTarget = stepToward(enemy.position, nearest.position, occupied);
+    if (enraged && manhattanDistance(moveTarget, nearest.position) > 1) {
+      const secondOccupied = [...occupied, moveTarget];
+      moveTarget = stepToward(moveTarget, nearest.position, secondOccupied);
+    }
+    actions.push({ type: 'move', target: moveTarget });
+    if (manhattanDistance(moveTarget, nearest.position) === 1) {
+      actions.push({ type: 'attack', target: nearest.position, damage: 2 });
+    }
+  }
+
+  return { actions };
+}
+
+function shieldIntent(enemy: EnemyState, allEnemies: readonly EnemyState[], occupied: readonly Position[]): Intent {
+  if (enemy.pinned) return { actions: [{ type: 'idle' }] };
+
+  let weakest: EnemyState | null = null;
+  let lowestHp = Infinity;
+  for (const ally of allEnemies) {
+    if (ally.id === enemy.id || ally.hp <= 0) continue;
+    if (ally.hp < lowestHp) {
+      lowestHp = ally.hp;
+      weakest = ally;
+    }
+  }
+
+  if (!weakest) return { actions: [{ type: 'idle' }] };
+
+  const dist = manhattanDistance(enemy.position, weakest.position);
+  if (dist <= 1) return { actions: [{ type: 'idle' }] };
+
+  const moveTarget = stepToward(enemy.position, weakest.position, occupied);
+  return { actions: [{ type: 'move', target: moveTarget }] };
+}
+
 export function generateIntent(
   enemy: EnemyState,
   units: readonly UnitState[],
@@ -156,8 +218,8 @@ export function generateIntent(
     case EnemyType.ARCHER:  return archerIntent(enemy, units);
     case EnemyType.SPAWNER: return spawnerIntent(enemy);
     case EnemyType.CHARGER: return chargerIntent(enemy, units, occupied);
-    case EnemyType.SHIELD:  return { actions: [{ type: 'idle' }] };
-    case EnemyType.WARLORD: return gruntIntent(enemy, units, occupied);
+    case EnemyType.SHIELD:  return shieldIntent(enemy, allEnemies, occupied);
+    case EnemyType.WARLORD: return warlordIntent(enemy, units, occupied);
     case EnemyType.QUEEN:   return { actions: [{ type: 'idle' }] };
   }
 }

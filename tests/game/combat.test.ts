@@ -49,6 +49,22 @@ describe('Combat', () => {
       expect(result.enemies[0].hp).toBe(1);
       expect(result.enemies[1].hp).toBe(1);
     });
+
+    it('Shield reduces damage to adjacent ally by 1', () => {
+      const unit = createUnit(UnitClass.VANGUARD, createPosition(3, 3));
+      const grunt = createEnemy(EnemyType.GRUNT, createPosition(4, 3));
+      const shield = createEnemy(EnemyType.SHIELD, createPosition(5, 3));
+      const result = executeAbility(unit, 0, createPosition(4, 3), [unit], [grunt, shield]);
+      expect(result.enemies[0].hp).toBe(2); // 1 damage - 1 shield = 0
+    });
+
+    it('Shield does not reduce damage if not adjacent', () => {
+      const unit = createUnit(UnitClass.VANGUARD, createPosition(3, 3));
+      const grunt = createEnemy(EnemyType.GRUNT, createPosition(4, 3));
+      const shield = createEnemy(EnemyType.SHIELD, createPosition(7, 7));
+      const result = executeAbility(unit, 0, createPosition(4, 3), [unit], [grunt, shield]);
+      expect(result.enemies[0].hp).toBe(1); // normal 1 damage
+    });
   });
 
   describe('resolveEnemyIntents', () => {
@@ -91,6 +107,20 @@ describe('Combat', () => {
       const result = resolveEnemyIntents([enemy], []);
       expect(result.enemies[0].intent).toBeNull();
       expect(result.enemies[0].pinned).toBe(false);
+    });
+
+    it('buff action sets buffed on all grunts', () => {
+      const warlord: EnemyState = {
+        ...createEnemy(EnemyType.WARLORD, createPosition(7, 7)),
+        intent: { actions: [{ type: 'buff' }] },
+      };
+      const grunt: EnemyState = {
+        ...createEnemy(EnemyType.GRUNT, createPosition(5, 5)),
+        intent: { actions: [{ type: 'idle' }] },
+      };
+      const result = resolveEnemyIntents([warlord, grunt], []);
+      const resolvedGrunt = result.enemies.find(e => e.enemyType === EnemyType.GRUNT);
+      expect(resolvedGrunt?.buffed).toBe(true);
     });
   });
 });
