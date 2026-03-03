@@ -169,13 +169,13 @@ describe('Enemies', () => {
       });
 
       it('spawns grunt every 2 turns in phase 1', () => {
-        const queen = { ...createEnemy(EnemyType.QUEEN, createPosition(6, 6)), turnsSinceSpawn: 1 };
+        const queen = { ...createEnemy(EnemyType.QUEEN, createPosition(6, 6)), turnsSinceSpawn: 2 };
         const intent = generateIntent(queen, playerUnits, [queen]);
         expect(intent.actions).toContainEqual({ type: 'spawn' });
       });
 
       it('does not spawn on off-turns in phase 1', () => {
-        const queen = createEnemy(EnemyType.QUEEN, createPosition(6, 6));
+        const queen = { ...createEnemy(EnemyType.QUEEN, createPosition(6, 6)), turnsSinceSpawn: 1 };
         const intent = generateIntent(queen, playerUnits, [queen]);
         expect(intent.actions).not.toContainEqual({ type: 'spawn' });
       });
