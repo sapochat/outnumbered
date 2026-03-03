@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Box, Text, useInput, useApp } from 'ink';
 import { GameScreen } from './game-screen.js';
 import { RewardScreen } from './reward-screen.js';
 import { type RunState, UnitClass } from '../game/types.js';
 import { createNewRun, advancePhase } from '../game/engine.js';
+import { loadMeta, saveMeta, addHighScore, unlockClass, type MetaState } from '../state/save.js';
 
 type Screen = 'title' | 'game' | 'reward' | 'game_over' | 'victory';
 
@@ -11,6 +12,37 @@ export const App: React.FC = () => {
   const { exit } = useApp();
   const [screen, setScreen] = useState<Screen>('title');
   const [run, setRun] = useState<RunState | null>(null);
+  const [meta, setMeta] = useState<MetaState>(() => loadMeta());
+
+  // Wrapper around setScreen that triggers persistence side effects
+  const handleScreenChange = useCallback(
+    (newScreen: Screen) => {
+      if (newScreen === 'game_over' && run) {
+        // Save the high score
+        let updated = addHighScore(meta, run.score);
+        saveMeta(updated);
+        setMeta(updated);
+      }
+
+      if (newScreen === 'reward' && run && run.floor.floorNumber >= 5) {
+        // Unlock Ranger when clearing floor 5+
+        let updated = unlockClass(meta, UnitClass.RANGER);
+        saveMeta(updated);
+        setMeta(updated);
+      }
+
+      if (newScreen === 'victory' && run) {
+        // Unlock Arcanist on victory + save high score
+        let updated = addHighScore(meta, run.score);
+        updated = unlockClass(updated, UnitClass.ARCANIST);
+        saveMeta(updated);
+        setMeta(updated);
+      }
+
+      setScreen(newScreen);
+    },
+    [run, meta],
+  );
 
   // Input only active when NOT on game screen (game screen has its own handler)
   useInput(
@@ -48,6 +80,16 @@ export const App: React.FC = () => {
         <Box marginTop={1}>
           <Text dimColor>You are always outnumbered. Never outsmarted.</Text>
         </Box>
+        {meta.highScores.length > 0 && (
+          <Box marginTop={1} flexDirection="column" alignItems="center">
+            <Text bold color="white">High Scores</Text>
+            {meta.highScores.slice(0, 3).map((score, i) => (
+              <Text key={i} color="yellow">
+                {i + 1}. {score}
+              </Text>
+            ))}
+          </Box>
+        )}
         <Box marginTop={2} flexDirection="column" alignItems="center">
           <Text color="yellow">[Enter] Start Run</Text>
           <Text color="gray">[Q] Quit</Text>
@@ -61,7 +103,7 @@ export const App: React.FC = () => {
       <GameScreen
         run={run}
         setRun={setRun}
-        setScreen={setScreen}
+        setScreen={handleScreenChange}
         onQuit={exit}
       />
     );
