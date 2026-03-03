@@ -148,20 +148,12 @@ export const GridPanel: React.FC<GridPanelProps> = ({
     <Box flexDirection="column" alignItems="center">
       {/* Column headers */}
       <Box>
-        <Text color="gray">{'   '}</Text>
-        {Array.from({ length: 8 }, (_, i) => (
-          <Text key={i} color="gray">
-            {padCenter(String(i + 1), CELL_WIDTH)}
-          </Text>
-        ))}
-        <Text>{'  '}</Text>
+        <Text color="gray">{`   ${Array.from({ length: 8 }, (_, i) => padCenter(String(i + 1), CELL_WIDTH)).join('')}   `}</Text>
       </Box>
 
       {/* Top border */}
       <Box>
-        <Text color="gray">{'  ┌'}</Text>
-        <Text color="gray">{'─'.repeat(CELL_WIDTH * 8)}</Text>
-        <Text color="gray">{'┐'}</Text>
+        <Text color="gray">{`  ┌${'─'.repeat(CELL_WIDTH * 8)}┐  `}</Text>
       </Box>
 
       {/* Grid rows */}
@@ -174,17 +166,14 @@ export const GridPanel: React.FC<GridPanelProps> = ({
               const col = colIdx + 1;
               return renderCell(col, row);
             })}
-            <Text color="gray">{'│'}</Text>
-            <Text color="gray">{` ${row}`}</Text>
+            <Text color="gray">{`│ ${row}`}</Text>
           </Box>
         );
       })}
 
       {/* Bottom border */}
       <Box>
-        <Text color="gray">{'  └'}</Text>
-        <Text color="gray">{'─'.repeat(CELL_WIDTH * 8)}</Text>
-        <Text color="gray">{'┘'}</Text>
+        <Text color="gray">{`  └${'─'.repeat(CELL_WIDTH * 8)}┘  `}</Text>
       </Box>
     </Box>
   );
