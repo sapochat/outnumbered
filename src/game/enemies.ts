@@ -23,6 +23,7 @@ export function createEnemy(enemyType: EnemyType, position: Position): EnemyStat
     intent: null,
     turnsSinceSpawn: 0,
     pinned: false,
+    buffed: false,
   };
 }
 
@@ -110,7 +111,10 @@ export function generateIntent(
     case EnemyType.GRUNT:   return gruntIntent(enemy, units, occupied);
     case EnemyType.ARCHER:  return archerIntent(enemy, units);
     case EnemyType.SPAWNER: return spawnerIntent(enemy);
-    case EnemyType.BOSS:    return gruntIntent(enemy, units, occupied); // Boss uses grunt AI for v1
+    case EnemyType.CHARGER: return { actions: [{ type: 'idle' }] };
+    case EnemyType.SHIELD:  return { actions: [{ type: 'idle' }] };
+    case EnemyType.WARLORD: return gruntIntent(enemy, units, occupied);
+    case EnemyType.QUEEN:   return { actions: [{ type: 'idle' }] };
   }
 }
 

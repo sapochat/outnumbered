@@ -40,6 +40,9 @@ describe('Core Types', () => {
     expect(EnemyType.GRUNT).toBe('grunt');
     expect(EnemyType.ARCHER).toBe('archer');
     expect(EnemyType.SPAWNER).toBe('spawner');
-    expect(EnemyType.BOSS).toBe('boss');
+    expect(EnemyType.CHARGER).toBe('charger');
+    expect(EnemyType.SHIELD).toBe('shield');
+    expect(EnemyType.WARLORD).toBe('warlord');
+    expect(EnemyType.QUEEN).toBe('queen');
   });
 });

@@ -29,7 +29,10 @@ const ENEMY_COLORS: Record<EnemyType, string> = {
   [EnemyType.GRUNT]: 'red',
   [EnemyType.ARCHER]: 'yellow',
   [EnemyType.SPAWNER]: 'redBright',
-  [EnemyType.BOSS]: 'white',
+  [EnemyType.CHARGER]: 'yellowBright',
+  [EnemyType.SHIELD]: 'blueBright',
+  [EnemyType.WARLORD]: 'white',
+  [EnemyType.QUEEN]: 'magentaBright',
 };
 
 function getDangerTiles(enemies: readonly EnemyState[]): Position[] {
@@ -40,6 +43,9 @@ function getDangerTiles(enemies: readonly EnemyState[]): Position[] {
       if (action.type === 'attack') {
         tiles.push(action.target);
       }
+    }
+    if (enemy.intent.dangerTiles) {
+      tiles.push(...enemy.intent.dangerTiles);
     }
   }
   return tiles;
@@ -91,7 +97,7 @@ export const GridPanel: React.FC<GridPanelProps> = ({
       const color = ENEMY_COLORS[enemy.enemyType];
       const bgColor = isCursor
         ? 'yellow'
-        : enemy.enemyType === EnemyType.BOSS
+        : enemy.enemyType === EnemyType.WARLORD || enemy.enemyType === EnemyType.QUEEN
           ? 'red'
           : isDanger
             ? 'red'
