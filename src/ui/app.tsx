@@ -170,6 +170,7 @@ export const App: React.FC = () => {
     return (
       <RewardScreen
         run={run}
+        unlockedClasses={meta.unlockedClasses}
         onSelect={(updatedRun) => {
           const withIntents = advancePhase(updatedRun);
           setRun(withIntents);
