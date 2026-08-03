@@ -27,6 +27,23 @@ describe('Combat', () => {
       expect(result.enemies[0].position.col).toBeLessThanOrEqual(8);
     });
 
+    it('Shove stops before another enemy', () => {
+      const unit = createUnit(UnitClass.VANGUARD, createPosition(3, 3));
+      const enemy = createEnemy(EnemyType.GRUNT, createPosition(4, 3));
+      const blocker = createEnemy(EnemyType.GRUNT, createPosition(5, 3));
+      const result = executeAbility(unit, 1, createPosition(4, 3), [unit], [enemy, blocker]);
+      expect(result.enemies[0].position).toEqual({ col: 4, row: 3 });
+      expect(result.enemies[1].position).toEqual({ col: 5, row: 3 });
+    });
+
+    it('Shove stops before a unit', () => {
+      const unit = createUnit(UnitClass.VANGUARD, createPosition(3, 3));
+      const ally = createUnit(UnitClass.RANGER, createPosition(6, 3));
+      const enemy = createEnemy(EnemyType.GRUNT, createPosition(4, 3));
+      const result = executeAbility(unit, 1, createPosition(4, 3), [unit, ally], [enemy]);
+      expect(result.enemies[0].position).toEqual({ col: 5, row: 3 });
+    });
+
     it('Shoot deals 1 damage at range', () => {
       const unit = createUnit(UnitClass.RANGER, createPosition(1, 3));
       const enemy = createEnemy(EnemyType.GRUNT, createPosition(4, 3));

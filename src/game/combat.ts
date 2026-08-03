@@ -7,7 +7,7 @@ import {
 } from './types.js';
 import { applyDamage } from './units.js';
 import { applyEnemyDamage, createEnemy } from './enemies.js';
-import { getAdjacent, getDirectionBetween, manhattanDistance } from './grid.js';
+import { getAdjacent, getDirectionBetween, isInBounds, manhattanDistance } from './grid.js';
 
 function hasAdjacentShield(target: Position, enemies: readonly EnemyState[]): boolean {
   const adjacent = getAdjacent(target);
@@ -19,6 +19,24 @@ function hasAdjacentShield(target: Position, enemies: readonly EnemyState[]): bo
 interface AbilityResult {
   enemies: EnemyState[];
   units: UnitState[];
+}
+
+function getPushedPosition(
+  from: Position,
+  dc: number,
+  dr: number,
+  distance: number,
+  occupied: readonly Position[],
+): Position {
+  let current = from;
+  for (let step = 0; step < distance; step++) {
+    const next = { col: current.col + dc, row: current.row + dr };
+    if (!isInBounds(next.col, next.row) || occupied.some(pos => posEqual(pos, next))) {
+      return current;
+    }
+    current = next;
+  }
+  return current;
 }
 
 export function executeAbility(
@@ -68,11 +86,11 @@ export function executeAbility(
         const dr = target.row - unit.position.row;
         const normDc = dc === 0 ? 0 : dc / Math.abs(dc);
         const normDr = dr === 0 ? 0 : dr / Math.abs(dr);
-        let newCol = e.position.col + normDc * pushDist;
-        let newRow = e.position.row + normDr * pushDist;
-        newCol = Math.max(1, Math.min(8, newCol));
-        newRow = Math.max(1, Math.min(8, newRow));
-        return { ...e, position: { col: newCol, row: newRow } };
+        const occupied = [
+          ...newUnits.filter(u => u.hp > 0).map(u => u.position),
+          ...newEnemies.filter(other => other.id !== e.id && other.hp > 0).map(other => other.position),
+        ];
+        return { ...e, position: getPushedPosition(e.position, normDc, normDr, pushDist, occupied) };
       });
     }
   }
